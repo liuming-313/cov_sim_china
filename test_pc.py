@@ -462,6 +462,7 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     return sim
 
 
+
 def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0.7, third_vac_rate='', factor=16,
                   filename='plot',
                   method=''):
