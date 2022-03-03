@@ -80,13 +80,15 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     :param method: nm: normal ; sp:spcial for elder and child
     :return: sim
     '''
+
     def protect_reinfection(sim):
         sim.people.rel_sus[sim.people.recovered] = 0.0
+
     total_pop = 7.462e6  # HK polulation size
     pop_size = int(7.462e6 / factor)
     pop_scale = factor
     pop_type = 'hybrid'
-    beta = 0.02 #previous value: 0.016
+    beta = 0.016  # previous value: 0.016
     verbose = 0
     seed = 1
     asymp_factor = 1  # multiply beta by this factor for asymptomatic cases; no statistically significant difference in transmissibility
@@ -130,25 +132,25 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     omicron4 = cv.variant('delta', days=sim.day('2022-01-18'), n_imports=98)
     omicron5 = cv.variant('delta', days=sim.day('2022-01-19'), n_imports=97)
     omicron1.p['rel_beta'] = 7.018
-    omicron1.p['rel_severe_prob'] = 0.2  ##1/7*0.47*3.2
+    omicron1.p['rel_severe_prob'] = 0.2 * 2  ##1/7*0.47*3.2
     omicron1.p['rel_crit_prob'] = 0.36
-    omicron1.p['rel_death_prob'] = 0.4
+    omicron1.p['rel_death_prob'] = 0.4 * 2
     omicron2.p['rel_beta'] = 7.018
-    omicron2.p['rel_severe_prob'] = 0.2  ##1/7*0.47*3.2
+    omicron2.p['rel_severe_prob'] = 0.2 * 2  ##1/7*0.47*3.2
     omicron2.p['rel_crit_prob'] = 0.36
-    omicron2.p['rel_death_prob'] = 0.4
+    omicron2.p['rel_death_prob'] = 0.4 * 2
     omicron3.p['rel_beta'] = 7.018
-    omicron3.p['rel_severe_prob'] = 0.2  ##1/7*0.47*3.2
+    omicron3.p['rel_severe_prob'] = 0.2 * 2  ##1/7*0.47*3.2
     omicron3.p['rel_crit_prob'] = 0.36
-    omicron3.p['rel_death_prob'] = 0.4
+    omicron3.p['rel_death_prob'] = 0.4 * 2
     omicron4.p['rel_beta'] = 7.018
-    omicron4.p['rel_severe_prob'] = 0.2  ##1/7*0.47*3.2
+    omicron4.p['rel_severe_prob'] = 0.2 * 2  ##1/7*0.47*3.2
     omicron4.p['rel_crit_prob'] = 0.36
-    omicron4.p['rel_death_prob'] = 0.4
+    omicron4.p['rel_death_prob'] = 0.4 * 2
     omicron5.p['rel_beta'] = 7.018
-    omicron5.p['rel_severe_prob'] = 0.2  ##1/7*0.47*3.2
+    omicron5.p['rel_severe_prob'] = 0.2 * 2  ##1/7*0.47*3.2
     omicron5.p['rel_crit_prob'] = 0.36
-    omicron5.p['rel_death_prob'] = 0.4
+    omicron5.p['rel_death_prob'] = 0.4 * 2
     sim['variants'] += [omicron1, omicron2, omicron3, omicron4, omicron5]
 
     if ful_vac_rate == 0.8:
@@ -447,7 +449,7 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     # test prob of symp_prob will test in two days,asymp_prob will test in seven days,wait for 3 days to know the result because conditional HK policy
     ct_1 = cv.contact_tracing(trace_probs=dict(h=0.8, s=0.3, w=0.3, c=0.2), presumptive=True, quar_period=3,
                               do_plot=False, start_day='2022-01-01', end_day='2022-02-16')
-    ct_2 = cv.contact_tracing(trace_probs=dict(h=0.8, s=0.3, w=0.3, c=0.1), presumptive=True, quar_period=3,
+    ct_2 = cv.contact_tracing(trace_probs=dict(h=0.8, s=0.3, w=0.3, c=0.05), presumptive=True, quar_period=3,
                               do_plot=False, start_day='2022-02-16')
     # todo Universal Testing
     # tp_ut1 =cv.test_prob(symp_prob=0.3, asymp_prob=0.1, symp_quar_prob=0.5, asymp_quar_prob=0.1, test_delay=2,
@@ -455,19 +457,16 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
 
     interventions = [vaccine_S_1, vaccine_S_2, vaccine_S_2_boost, vaccine_B_1, vaccine_B_2, vaccine_B_2_boost, tp_1,
                      ct_1, ct_2,
-                     close_schools, close_works, social_distancing_community, social_distancing_home,protect_reinfection]
+                     close_schools, close_works, social_distancing_community, social_distancing_home]
     sim.update_pars(interventions=interventions)
     sim.initialize()
-
+    print('update sim successfully')
     return sim
-
 
 
 def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0.7, third_vac_rate='', factor=16,
                   filename='plot',
                   method=''):
-
-
     def protect_elderly(sim):
         if sim.t == sim.day('2022-04-01'):
             elderly = sim.people.age > 70
@@ -493,6 +492,7 @@ def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0
     ##running with multisims
     s0 = make_sim(n_beds, n_icus, ful_vac_rate, third_vac_rate, soc_dis_rate, factor, method=method)
     s0.run()
+    print('sim run successfully')
     print_list_pars.append(s0.pars)
     file_name = filename + method + '.png'
     fig = s0.plot(start='2022-01-01', to_plot=to_plot, do_save=True, do_show=False, n_cols=2, figsize=(30, 20),
@@ -506,7 +506,7 @@ def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0
                 'critical': agehist.get(date)['critical'], 'dead': agehist.get(date)['dead']}
         df_list_age_cum.append([file_name, row_num_age_cum, pd.DataFrame(data)])
         row_num_age_cum += 12
-
+    print('sim analyzer 1 successfully')
     agehist_new_df = s0['analyzers'][1].to_df()
 
     row_num_age_new = 0
@@ -514,7 +514,7 @@ def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0
     for date in age_trace_time:
         df_list_age_new.append([row_num_age_new, agehist_new_df[agehist_new_df['date'] == date]])
         row_num_age_new += 12
-
+    print('sim analyzer 2 successfully')
     row_num_age_new = 0
 
     # ,['new_infections','cum_infections','new_severe', 'n_severe','new_critical','n_critical','new_quarantined','n_quarantined','new_deaths','cum_deaths'],
@@ -560,9 +560,10 @@ for i in range(0, 25):
             method = ''
         else:
             method = para_data[i][5]
+        print(i, 'is successful in main')
         print_picture(n_beds=para_data[i][0], n_icus=para_data[i][1], ful_vac_rate=para_data[i][2],
                       third_vac_rate=third_vac_rate,
-                      soc_dis_rate=para_data[i][4], factor=16, filename=str(i), method=method)
+                      soc_dis_rate=para_data[i][4], factor=8, filename=str(i), method=method)
 # age-distribution data
 # with pd.ExcelWriter('output_age.xlsx') as writer:
 #     for filename, row_num_age_cum, df in df_list_age_cum:
@@ -578,6 +579,7 @@ with pd.ExcelWriter('output_age_cum.xlsx') as writer:
         cnt_1 += 1
         if cnt_1 % (len(age_trace_time)) == 0:  #
             col_num_age_cum += len(trace_state) + 3
+print('print cum successfully')
 cnt_2 = 0
 with pd.ExcelWriter('output_age_new.xlsx') as writer:
     for row_num_age_new, df in df_list_age_new:
@@ -586,5 +588,5 @@ with pd.ExcelWriter('output_age_new.xlsx') as writer:
         if cnt_2 % (len(age_trace_time)) == 0:  #
             col_num_age_new += len(trace_state) + 3
 # todo finish
-
+print('print new successfully')
 print('done')
