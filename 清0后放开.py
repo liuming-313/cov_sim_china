@@ -12,8 +12,8 @@ import covasim as cv
 import sciris as sc
 import pylab as pl
 import pandas as pd
-test_para=[1]
-test_acu=32
+test_para=[0.1,0.2,0.3]
+test_acu=16
 para_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDrive - HKUST\PHD\ming\paras.xlsx',
                           header=1)
 # para_data = pd.read_excel(r'paras.xlsx', header=1)
@@ -50,10 +50,10 @@ to_plot = sc.objdict({
 })
 age_trace_time = ['2022-03-15', '2022-03-23',
                   '2022-03-31', '2022-04-08', '2022-04-15', '2022-04-30',
-                  '2022-05-15', '2022-06-01']  # trace the age-distribution data
+                  '2022-05-15', '2022-06-01','2022-07-01','2022-08-01']  # trace the age-distribution data
 sum_trace_time = ['2022-03-15', '2022-03-23',
                   '2022-03-31', '2022-04-08', '2022-04-15', '2022-04-30',
-                  '2022-05-15', '2022-06-01']  # trace the new and accumulative cases
+                  '2022-05-15', '2022-06-01','2022-07-01','2022-08-01']  # trace the new and accumulative cases
 trace_state = ['infectious', 'severe', 'critical', 'dead']
 
 
@@ -75,7 +75,7 @@ def check(sim):
 
 
 def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rate='', soc_dis_rate=0.7, factor=100,
-             method='', ):
+             method='', filename=''):
     '''
     :param n_beds_hosp: number of islation beds in hospital
     :param n_beds_icu:  number of ICU beds
@@ -355,14 +355,24 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     #     clo_sch_rate=soc_dis_rate;clo_wo_rate=soc_dis_rate;h_dis_rate=soc_dis_rate
     # else:
     #     clo_sch_rate=0.05;clo_wo_rate=0.05;h_dis_rate=0.3
+    #'2022-04-10','2022-04-20''  '2022-03-26','2022-04-05'
     clo_sch_rate, clo_wo_rate, h_dis_rate = soc_dis_rate, soc_dis_rate, soc_dis_rate
-    close_schools = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, clo_sch_rate], layers='s',
+    if filename=='0.2':
+        eff_days = ['2022-01-13', '2022-03-26','2022-04-05','2022-05-01','2022-08-01']
+        eff_rates = [0.7, 0.1,0.7,0.85,soc_dis_rate]
+    elif filename=='0.3':
+        eff_days = ['2022-01-13', '2022-04-10','2022-04-20', '2022-05-01', '2022-08-01']
+        eff_rates = [0.7, 0.1, 0.7, 0.85, soc_dis_rate]
+    elif filename=='0.1':
+        eff_days = ['2022-01-13',  '2022-05-01', '2022-08-01']
+        eff_rates = [0.7,0.85, soc_dis_rate]
+    close_schools = cv.change_beta(days=eff_days, changes=eff_rates, layers='s',
                                    do_plot=False)  # close 90% of schools
-    close_works = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, clo_wo_rate], layers='w',
+    close_works = cv.change_beta(days=eff_days, changes=eff_rates, layers='w',
                                  do_plot=False)  # close 80% of works
 
-    social_distancing_home = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, h_dis_rate], layers='h')
-    social_distancing_community = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, soc_dis_rate],
+    social_distancing_home = cv.change_beta(days=eff_days, changes=eff_rates, layers='h')
+    social_distancing_community = cv.change_beta(days=eff_days, changes=eff_rates,
                                                  layers='c')  # social distancing in communities 70% of community contact
 
     # Define the vaccine
@@ -487,7 +497,7 @@ def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0
             sim.people.doses = 2
 
     ##running with multisims
-    s0 = make_sim(n_beds, n_icus, ful_vac_rate, third_vac_rate, soc_dis_rate, factor, method=method)
+    s0 = make_sim(n_beds, n_icus, ful_vac_rate, third_vac_rate, soc_dis_rate, factor, method=method,filename=filename)
     s0.run()
     print('sim run successfully')
     print_list_pars.append(s0.pars)
@@ -544,8 +554,8 @@ df_list_age_cum = []
 df_list_age_new = []
 print_list_pars = []
 # vaccination cate
-for i in range(0, 25):
-    if i in test_para:
+for i in test_para:
+
         # ,6,7,8,9
         if para_data[i][3] == 'n':
             third_vac_rate = ''
