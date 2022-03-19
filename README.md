@@ -1,4 +1,4 @@
-# cov_sim_china
+# cov_sim_hk
 
 the project provide simulation to the fifth wave of pandemic of HK
 
