@@ -4,7 +4,7 @@ Created on Sat Feb 19 16:32:33 2022
 
 @author: m1550
 """
-
+#安装包
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
@@ -12,8 +12,10 @@ import covasim as cv
 import sciris as sc
 import pylab as pl
 import pandas as pd
-test_para=[1]
-test_acu=32
+
+##测试内容
+test_para=[1]#测试哪些内容，1，2，3，4，
+test_acu=32#多少个人去代表 1个单位   
 para_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDrive - HKUST\PHD\ming\paras.xlsx',
                           header=1)
 # para_data = pd.read_excel(r'paras.xlsx', header=1)
@@ -22,13 +24,14 @@ vac_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDr
 #vac_data = pd.read_excel(r'feature.xlsx', sheet_name='vac_data')
 
 
-cv.check_version('3.1.2')
+cv.check_version('3.1.3')#omicron
 
 ##input para:
-do_plot = 1
-do_save = 1
-save_sim = 1
+do_plot = 1#自动作图
+do_save = 1#自动保存
+save_sim = 1#是否存sim
 plot_hist = 0  # whether to keep people
+#作图的内容，需要的参数
 to_plot = sc.objdict({
     'Daily infections': ['new_infections'],
     'Cumulative infections': ['cum_infections'],
@@ -48,13 +51,14 @@ to_plot = sc.objdict({
     # 'proportion vaccinated': ['frac_vaccinated'],
     # 'Vaccinations ': ['cum_vaccinated'],
 })
+#
 age_trace_time = ['2022-03-15', '2022-03-23',
                   '2022-03-31', '2022-04-08', '2022-04-15', '2022-04-30',
                   '2022-05-15', '2022-06-01']  # trace the age-distribution data
 sum_trace_time = ['2022-03-15', '2022-03-23',
                   '2022-03-31', '2022-04-08', '2022-04-15', '2022-04-30',
                   '2022-05-15', '2022-06-01']  # trace the new and accumulative cases
-trace_state = ['infectious', 'severe', 'critical', 'dead']
+trace_state = ['infectious', 'severe', 'critical', 'dead']#文章中数据分析里面
 
 
 
@@ -76,6 +80,7 @@ def check(sim):
 
 def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rate='', soc_dis_rate=0.7, factor=100,
              method='', ):
+  #baselime
     '''
     :param n_beds_hosp: number of islation beds in hospital
     :param n_beds_icu:  number of ICU beds
@@ -93,7 +98,7 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     pop_size = int(7.462e6 / factor)
     pop_scale = factor
     pop_type = 'hybrid'
-    beta = 0.016  # previous value: 0.016
+    beta = 0.016  # previous value: 0.016 
     verbose = 0
     seed = 1
     asymp_factor = 1  # multiply beta by this factor for asymptomatic cases; no statistically significant difference in transmissibility
