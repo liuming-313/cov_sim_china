@@ -135,13 +135,13 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
 
 
 
-    close_schools = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, clo_sch_rate], layers='s',
+    close_schools = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3], layers='s',
                                    do_plot=False)  # close 90% of schools
-    close_works = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, clo_wo_rate], layers='w',
+    close_works = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3], layers='w',
                                  do_plot=False)  # close 80% of works
 
-    social_distancing_home = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, h_dis_rate], layers='h')
-    social_distancing_community = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, soc_dis_rate],
+    social_distancing_home = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3], layers='h')
+    social_distancing_community = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3],
                                                  layers='c')  # social distancing in communities 70% of community contact
 
 
