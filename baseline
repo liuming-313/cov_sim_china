@@ -1,4 +1,4 @@
-#install some basic packages including numpy,numba,pandas,scipy,statsmodels,matplotlib,sciris>=1.3.3
+# install some basic packages including numpy,numba,pandas,scipy,statsmodels,matplotlib,sciris>=1.3.3
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,25 +8,25 @@ import sciris as sc
 import pylab as pl
 import pandas as pd
 
-#test items
-test_para=[1]#测试哪些内容，1，2，3，4，
-test_acu=32#多少个人去代表 1个单位   
+# test items
+test_para = [1]  # 测试哪些内容，1，2，3，4，
+test_acu = 32  # 多少个人去代表 1个单位
 para_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDrive - HKUST\PHD\ming\paras.xlsx',
                           header=1)
 # para_data = pd.read_excel(r'paras.xlsx', header=1)
 vac_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDrive - HKUST\PHD\ming\feature.xlsx',
                          sheet_name='vac_data')
-#vac_data = pd.read_excel(r'feature.xlsx', sheet_name='vac_data')
+# vac_data = pd.read_excel(r'feature.xlsx', sheet_name='vac_data')
 
 
-cv.check_version('3.1.3')#omicron
+cv.check_version('3.1.3')  # trace the lastest version
 
 ##input para:
-do_plot = 1#自动作图
-do_save = 1#自动保存
-save_sim = 1#是否存sim
+do_plot = 1  # 自动作图
+do_save = 1  # 自动保存
+save_sim = 1  # 是否存sim
 plot_hist = 0  # whether to keep people
-#作图的内容，需要的参数
+# paras of plotting
 to_plot = sc.objdict({
     'Daily infections': ['new_infections'],
     'Cumulative infections': ['cum_infections'],
@@ -47,20 +47,16 @@ to_plot = sc.objdict({
     # 'Vaccinations ': ['cum_vaccinated'],
 })
 #
-age_trace_time = ['2022-03-15', '2022-03-23',
-                  '2022-03-31', '2022-04-08', '2022-04-15', '2022-04-30',
-                  '2022-05-15', '2022-06-01']  # trace the age-distribution data
-sum_trace_time = ['2022-03-15', '2022-03-23',
-                  '2022-03-31', '2022-04-08', '2022-04-15', '2022-04-30',
-                  '2022-05-15', '2022-06-01']  # trace the new and accumulative cases
-trace_state = ['infectious', 'severe', 'critical', 'dead']#文章中数据分析里面
+trace_time = ['2022-08-15', '2022-08-23',
+                  '2022-08-31', '2022-09-08', '2022-09-15', '2022-09-30',
+                  '2022-10-15', '2022-10-01']  # trace the age-distribution data
+
+trace_state = ['infectious', 'severe', 'critical', 'dead']  # 文章中数据分析里面
 
 
-
-
-def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rate='', soc_dis_rate=0.7, factor=100,
+def make_sim(n_beds_hosp=2000, n_beds_icu=20, ful_vac_rate=0.692, third_vac_rate='', soc_dis_rate=0.7, factor=100,
              method='', ):
-  #baselime
+    # baselime
     '''
     :param n_beds_hosp: number of islation beds in hospital
     :param n_beds_icu:  number of ICU beds
@@ -78,10 +74,10 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     pop_size = int(7.462e6 / factor)
     pop_scale = factor
     pop_type = 'hybrid'
-    beta = 0.016  # previous value: 0.016 
+    beta = 0.02  # previous value: 0.016
     verbose = 0
     seed = 1
-    asymp_factor = 1  # multiply beta by this factor for asymptomatic cases; no statistically significant difference in transmissibility
+    asymp_factor = 0  # multiply beta by this factor for asymptomatic cases; no statistically significant difference in transmissibility
     pars = sc.objdict(
         use_waning=True,
         pop_size=pop_size,
@@ -94,27 +90,19 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
         rand_seed=seed,
         verbose=verbose,
         nab_boost=6,
-        start_day='2021-12-15',
-        end_day='2022-09-30',
-        # dur={'exp2inf': {'dist': 'lognormal_int', 'par1': 1, 'par2': 1.5},
-        #      'inf2sym': {'dist': 'lognormal_int', 'par1': 2.1, 'par2': 0.6},
-        #      'sym2sev': {'dist': 'lognormal_int', 'par1': 5.8, 'par2': 4.9},
-        #      'sev2crit': {'dist': 'lognormal_int', 'par1': 1.3, 'par2': 2.0},
-        #      'asym2rec': {'dist': 'lognormal_int', 'par1': 5.0, 'par2': 2.0},
-        #      'mild2rec': {'dist': 'lognormal_int', 'par1': 5.0, 'par2': 2.0},
-        #      'sev2rec': {'dist': 'lognormal_int', 'par1': 8.0, 'par2': 2.0},
-        #      'crit2rec': {'dist': 'lognormal_int', 'par1': 15, 'par2': 6.3},
-        #      'crit2die': {'dist': 'normal', 'par1': 8, 'par2': 3}},
+        start_day='2022-8-05',
+        end_day='2022-12-30',
 
-        dur={'exp2inf': {'dist': 'lognormal_int', 'par1': 4.0, 'par2': 1.0},
-             'inf2sym': {'dist': 'lognormal_int', 'par1': 0.25, 'par2': 0.2},
-             'sym2sev': {'dist': 'lognormal_int', 'par1': 0.5, 'par2': 0.5},
-             'sev2crit': {'dist': 'lognormal_int', 'par1': 0.5, 'par2': 0.5},
-             'asym2rec': {'dist': 'lognormal_int', 'par1': 5.0, 'par2': 2.0},
-             'mild2rec': {'dist': 'lognormal_int', 'par1': 5.0, 'par2': 2.0},
-             'sev2rec': {'dist': 'lognormal_int', 'par1': 8.0, 'par2': 2.0},
-             'crit2rec': {'dist': 'lognormal_int', 'par1': 15, 'par2': 6.3},
-             'crit2die': {'dist': 'lognormal_int', 'par1': 0.5, 'par2': 0}},
+        dur={'exp2inf': {'dist': 'lognormal_int', 'par1': 2.46, 'par2': 0.45},
+             'inf2sym': {'dist': 'normal', 'par1': 0.0, 'par2': 0.0},
+             'sym2sev': {'dist': 'lognormal_int', 'par1': 0.62, 'par2': 0.63},
+             'sev2crit': {'dist': 'normal', 'par1': 7.0, 'par2': 2.0},
+             'asym2rec': {'dist': 'normal', 'par1': 0.0, 'par2': 0.0},
+             'mild2rec': {'dist': 'normal', 'par1': 0.0, 'par2': 0.0},
+             'sev2rec': {'dist': 'uniform', 'par1': 14.0, 'par2': 28.0},
+             'crit2rec': {'dist': 'uniform', 'par1': 14.0, 'par2': 28.0},
+             'crit2die': {'dist': 'uniform', 'par1': 1.5, 'par2': 2.0}},
+
         ##severity parameters
         n_beds_hosp=int(n_beds_hosp / factor),
         n_beds_icu=int(n_beds_icu / factor),
@@ -123,17 +111,20 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     )
 
     sim = cv.Sim(pars=pars, location='china, hong kong special administrative region',
-                 analyzers=[cv.age_histogram(days=age_trace_time, states=trace_state),
+                 analyzers=[cv.age_histogram(days=trace_time, states=trace_state),
                             cv.daily_age_stats(states=trace_state)])  # use age-distribution data
-    rel_beta = 7.018
-    rel_severe_prob = 0.4
-    rel_crit_prob = 0.36
-    rel_death_prob = 0.8
-    omicron = cv.variant('delta', days=sim.day('2022-01-15'), n_imports=16)  # np.array([16,15,125,98,97])
-    
-    sim['variants'] += [omicron]
 
-
+    #params of the virus
+    rel_beta = 0.954
+    rel_severe_prob = 0.90
+    rel_crit_prob = 0.15
+    rel_death_prob = 0.3
+    Monkeypox = cv.variant('delta', days=sim.day('2022-08-15'), n_imports=20)  # np.array([16,15,125,98,97])
+    Monkeypox.p['rel_beta'] = rel_beta
+    Monkeypox.p['rel_severe_prob'] = rel_severe_prob  ##1/7*0.47*3.2
+    Monkeypox.p['rel_crit_prob'] = rel_crit_prob
+    Monkeypox.p['rel_death_prob'] = rel_death_prob
+    sim['variants'] += [Monkeypox]
 
     close_schools = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3], layers='s',
                                    do_plot=False)  # close 90% of schools
@@ -144,8 +135,6 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     social_distancing_community = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3],
                                                  layers='c')  # social distancing in communities 70% of community contact
 
-
-   
     # Define the testing and contact tracing interventions  contact tracing is stopped
     tp_1 = cv.test_prob(symp_prob=0.3, asymp_prob=0.1, symp_quar_prob=0.5, asymp_quar_prob=0.1, test_delay=2,
                         do_plot=False)
@@ -159,14 +148,24 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=255, ful_vac_rate=0.692, third_vac_rat
     # tp_ut1 =cv.test_prob(symp_prob=0.3, asymp_prob=0.1, symp_quar_prob=0.5, asymp_quar_prob=0.1, test_delay=2,
     # do_plot=False,start_day='2022-01-01',end_day='2022-02-16')
 
-    interventions = [tp_1,ct_1, ct_2,close_schools, close_works, social_distancing_community, social_distancing_home]
+    #update the initial parameters
+    #1.update probalitities in all age groups
+    sim['prognoses']['age_cutoffs'] = np.array([0, 10, 20, 30, 40, 50, 65, 70, 80, 90])# Age cutoffs (lower limits)
+    sim['prognoses']['sus_ORs']=np.array([1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00])# Odds ratios for relative susceptibility
+    sim['prognoses']['symp_probs'] = np.array([0.90, 0.90, 0.90, 0.90, 0.20, 0.25, 0.30, 0.35, 0.40,0.45])  # Overall probability of developing symptoms
+    sim['prognoses']['severe_probs']= np.array([0.90, 0.90, 0.90, 0.90, 0.00, 0.00, 0.00, 0.05, 0.00,0.00])  # Overall probability of developing severe symptoms
+    sim['prognoses']['crit_probs'] = np.array([0.135, 0.135, 0.135, 0.135, 0.000, 0.000, 0.000, 0.000, 0.000,0.000])  # Overall probability of developing critical symptoms
+    sim['prognoses']['death_probs']= np.array([0.04, 0.04, 0.04, 0.04, 0.00, 0.00, 0.00, 0.00, 0.00,0.00]) # Overall probability of dying
+
+
+    interventions = [tp_1, ct_1, ct_2, close_schools, close_works, social_distancing_community, social_distancing_home,protect_reinfection]
     sim.update_pars(interventions=interventions)
     sim.initialize()
     print('update sim successfully')
     return sim
 
 
-def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0.7, third_vac_rate='', factor=16,
+def print_picture(n_beds=2000, n_icus=20, ful_vac_rate=0.691956, soc_dis_rate=0.7, third_vac_rate='', factor=16,
                   filename='plot',
                   method=''):
     def protect_elderly(sim):
@@ -192,13 +191,13 @@ def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0
     print('sim run successfully')
     print_list_pars.append(s0.pars)
     file_name = filename + method + '.png'
-    fig = s0.plot(start='2022-01-01', to_plot=to_plot, do_save=True, do_show=False, n_cols=2, figsize=(30, 20),
+    fig = s0.plot(start='2022-08-01', to_plot=to_plot, do_save=True, do_show=False, n_cols=2, figsize=(30, 20),
                   fig_path=file_name)
     # ,start = '2022-01-01',
     agehist = s0['analyzers'][0]
 
     row_num_age_cum = 0
-    for date in age_trace_time:
+    for date in trace_time:
         data = {'infected': agehist.get(date)['infectious'], 'severe': agehist.get(date)['severe'],
                 'critical': agehist.get(date)['critical'], 'dead': agehist.get(date)['dead']}
         df_list_age_cum.append([file_name, row_num_age_cum, pd.DataFrame(data)])
@@ -208,37 +207,12 @@ def print_picture(n_beds=2000, n_icus=255, ful_vac_rate=0.691956, soc_dis_rate=0
 
     row_num_age_new = 0
 
-    for date in age_trace_time:
+    for date in trace_time:
         df_list_age_new.append([row_num_age_new, agehist_new_df[agehist_new_df['date'] == date]])
         row_num_age_new += 12
     print('sim analyzer 2 successfully')
     row_num_age_new = 0
 
-    # ,['new_infections','cum_infections','new_severe', 'n_severe','new_critical','n_critical','new_quarantined','n_quarantined','new_deaths','cum_deaths'],
-    ##running with multisims
-    # sim=cv.Sim(pars,label='Default')
-    # msim=cv.MultiSim(sim)
-    # msim.run(n_runs=5)
-    # msim.mean()
-    # for pic in ['new_infections','cum_infections','cum_vaccinated','new_severe', 'new_critical','new_deaths','new_vaccinated']:
-    #     msim.plot_result(pic)
-
-    # scenarios={'baseline':{'name':'Baseline','pars':{}},'high_vaccine':{'name':'vaccine_S_c','pars':{},} }
-    # scens=cv.Scenarios(basepars=pars,scenarios=scenarios)
-    # scens.run()
-    # scens.plot(['new_infections','cum_infections','cum_vaccinated','new_severe', 'new_critical','new_deaths','new_vaccinated'])
-    # fig=msim.plot(['new_infections','cum_infections','cum_vaccinated','new_severe', 'new_critical','new_deaths','new_vaccinated'])
-
-
-# print_picture(factor=200,filename="test")
-
-# for i in range(0,25):
-# if i in np.arange(1):
-# print_picture(n_beds=data[i][0],n_icus=data[i][1],ful_vac_rate=data[i][2],soc_dis_rate=data[i][3],factor=8,filename=str(i))
-
-# para_source_data={0:[2000,255,0,0.7,'n'],1:[2000,255,0.692,0.7,'n'],2:[2000,255,0.692,1,'n'],3:[5000,500,0.692,0.7,'n'],4:[20000,2000,0.692,0.7,'n'],5:[2000,255,0.8,0.7,'sp'],6:[2000,255,0.8,0.7,'nm'],7:[2000,255,0.9,0.7,'sp'],8:[2000,255,0.9,0.7,'nm'],}
-# para_data=pd.DataFrame(para_source_data)
-#
 # base case
 df_list_age_cum = []
 df_list_age_new = []
@@ -272,7 +246,7 @@ with pd.ExcelWriter('output_age_cum.xlsx') as writer:
     for filename, row_num_age_cum, df in df_list_age_cum:
         df.to_excel(writer, startrow=row_num_age_cum, startcol=col_num_age_cum)
         cnt_1 += 1
-        if cnt_1 % (len(age_trace_time)) == 0:  #
+        if cnt_1 % (len(trace_time)) == 0:  #
             col_num_age_cum += len(trace_state) + 3
 print('print cum successfully')
 cnt_2 = 0
@@ -280,7 +254,7 @@ with pd.ExcelWriter('output_age_new.xlsx') as writer:
     for row_num_age_new, df in df_list_age_new:
         df.to_excel(writer, startrow=row_num_age_new, startcol=col_num_age_new)
         cnt_2 += 1
-        if cnt_2 % (len(age_trace_time)) == 0:  #
+        if cnt_2 % (len(trace_time)) == 0:  #
             col_num_age_new += len(trace_state) + 3
 # todo finish
 print('print new successfully')
