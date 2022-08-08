@@ -9,12 +9,12 @@ import pylab as pl
 import pandas as pd
 
 # test items
-test_para = [1]  # 测试哪些内容，1，2，3，4，
-test_acu = 32  # 多少个人去代表 1个单位
+test_para = [1,2,3,4,5,6]  # 测试哪些内容，1，2，3，4，5,6
+test_acu = 16  # *2 2 4 8 16  32
 para_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDrive - HKUST\PHD\ming\paras.xlsx',
                           header=1)
 # para_data = pd.read_excel(r'paras.xlsx', header=1)
-vac_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDrive - HKUST\PHD\ming\feature.xlsx',
+#vac_data = pd.read_excel(r'D:\onedrive\OneDrive - HKUST Connect\Desktop\IA\OneDrive - HKUST\PHD\ming\feature.xlsx',
                          sheet_name='vac_data')
 # vac_data = pd.read_excel(r'feature.xlsx', sheet_name='vac_data')
 
@@ -47,23 +47,22 @@ to_plot = sc.objdict({
     # 'Vaccinations ': ['cum_vaccinated'],
 })
 #
-trace_time = ['2022-08-15', '2022-08-23',
-                  '2022-08-31', '2022-09-08', '2022-09-15', '2022-09-30',
-                  '2022-10-15', '2022-10-01']  # trace the age-distribution data
+trace_time = ['2022-08-15', '2022-08-23','2022-08-31', '2022-09-08',
+              '2022-09-15', '2022-09-30','2022-10-15', '2022-11-01','2022-11-15','2022-12-01']  # trace the age-distribution data
 
 trace_state = ['infectious', 'severe', 'critical', 'dead']  # 文章中数据分析里面
 
 
-def make_sim(n_beds_hosp=2000, n_beds_icu=20, ful_vac_rate=0.692, third_vac_rate='', soc_dis_rate=0.7, factor=100,
-             method='', ):
+def make_sim(n_beds_hosp=2000, n_beds_icu=20, target_vac_rate=0, vac_rate=0, soc_dis_mod=0, factor=8,
+             ):
     # baselime
     '''
     :param n_beds_hosp: number of islation beds in hospital
     :param n_beds_icu:  number of ICU beds
-    :param ful_vac_rate: 80%,90%
-    :param soc_dis_rate: default: 0.7
+    :param target_vac_rate: 80%,90%
+    :param vac_rate: 80%,90%
+    :param soc_dis_mode: default: 0, 1,2,3
     :param factor:
-    :param method: nm: normal ; sp:spcial for elder and child
     :return: sim
     '''
 
@@ -114,6 +113,34 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=20, ful_vac_rate=0.692, third_vac_rate
                  analyzers=[cv.age_histogram(days=trace_time, states=trace_state),
                             cv.daily_age_stats(states=trace_state)])  # use age-distribution data
 
+    def risk_target_vac(sim):
+
+        #select target
+        risk_15_29=cv.true((sim.people.age >= 15) * (sim.people.age < 30))[:int(24000/factor)]# Multiplication means "and" here
+        risk_30_44=cv.true((sim.people.age >= 30) * (sim.people.age < 44))[:int(14000/factor)]# Multiplication means "and" here
+        risk_45=cv.true(sim.people.age >= 45)[:int(2000/factor)]
+
+        #target risk adjustment
+        sim.people.rel_sus[risk_15_29]=1.5
+        sim.people.rel_sus[risk_30_44] = 1.5
+        sim.people.rel_sus[risk_45] = 1.5
+
+        #vaccinate target group
+        sim.people.symp_prob[risk_15_29[:int(len(risk_15_29)* target_vac_rate)]]=0.15
+        sim.people.symp_prob[risk_30_44[:int(len(risk_30_44)*target_vac_rate)]]=0.15
+        sim.people.symp_prob[risk_45[:int(len(risk_45)*target_vac_rate)]]=0.15
+
+        sim.people.severe_prob[risk_15_29[:int(len(risk_15_29)* target_vac_rate)]]=0
+        sim.people.severe_prob[risk_30_44[:int(len(risk_30_44) * target_vac_rate)]] = 0
+        sim.people.severe_prob[risk_45[:int(len(risk_45) * target_vac_rate)]] = 0
+
+    def vac(sim):
+        people_u45=cv.true(sim.people.age < 45)
+        sim.people.symp_prob[people_u45[:int(len(people_u45)*vac_rate)]]=0.15
+        sim.people.severe_prob[people_u45[:int(len(people_u45) * vac_rate)]]=0
+
+
+
     #params of the virus
     rel_beta = 0.954
     rel_severe_prob = 0.90
@@ -126,48 +153,50 @@ def make_sim(n_beds_hosp=2000, n_beds_icu=20, ful_vac_rate=0.692, third_vac_rate
     Monkeypox.p['rel_death_prob'] = rel_death_prob
     sim['variants'] += [Monkeypox]
 
-    close_schools = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3], layers='s',
-                                   do_plot=False)  # close 90% of schools
-    close_works = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3], layers='w',
+    dist_dict={1:[0.70,0.80,0.70,0.60],2:[0.20,0.60,0.60,0.80],3:[0.20,0.10,0.50,0.80],0:[1.0,1.0,1.0,1.0]}
+     #work school community home
+    close_works = cv.change_beta(days=['2022-08-15'], changes=[dist_dict[soc_dis_mod][0]], layers='w',
                                  do_plot=False)  # close 80% of works
+    close_schools = cv.change_beta(days=['2022-08-15'], changes=[dist_dict[soc_dis_mod][1]], layers='s',
+                                   do_plot=False)  # close 90% of schools
+    social_distancing_community = cv.change_beta(days=['2022-08-15'], changes=[dist_dict[soc_dis_mod][2]],
+                                                     layers='c')  # social distancing in communities 70% of community contact
+    social_distancing_home = cv.change_beta(days=['2022-08-15'], changes=[dist_dict[soc_dis_mod][3]], layers='h')
 
-    social_distancing_home = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3], layers='h')
-    social_distancing_community = cv.change_beta(days=['2022-01-13', '2022-03-05'], changes=[0.7, 0.3],
-                                                 layers='c')  # social distancing in communities 70% of community contact
+
 
     # Define the testing and contact tracing interventions  contact tracing is stopped
     tp_1 = cv.test_prob(symp_prob=0.3, asymp_prob=0.1, symp_quar_prob=0.5, asymp_quar_prob=0.1, test_delay=2,
                         do_plot=False)
 
     # test prob of symp_prob will test in two days,asymp_prob will test in seven days,wait for 3 days to know the result because conditional HK policy
-    ct_1 = cv.contact_tracing(trace_probs=dict(h=0.8, s=0.3, w=0.3, c=0.2), presumptive=True, quar_period=3,
-                              do_plot=False, start_day='2022-01-01', end_day='2022-02-16')
-    ct_2 = cv.contact_tracing(trace_probs=dict(h=0.8, s=0.3, w=0.3, c=0.05), presumptive=True, quar_period=3,
-                              do_plot=False, start_day='2022-02-16')
+    ct_1 = cv.contact_tracing(trace_probs=dict(h=0.8, s=0.3, w=0.3, c=0.05), presumptive=True, quar_period=3,
+                              do_plot=False, start_day='2022-08-1')
     # todo Universal Testing
     # tp_ut1 =cv.test_prob(symp_prob=0.3, asymp_prob=0.1, symp_quar_prob=0.5, asymp_quar_prob=0.1, test_delay=2,
     # do_plot=False,start_day='2022-01-01',end_day='2022-02-16')
 
     #update the initial parameters
     #1.update probalitities in all age groups
-    sim['prognoses']['age_cutoffs'] = np.array([0, 10, 20, 30, 40, 50, 65, 70, 80, 90])# Age cutoffs (lower limits)
-    sim['prognoses']['sus_ORs']=np.array([1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00])# Odds ratios for relative susceptibility
-    sim['prognoses']['symp_probs'] = np.array([0.90, 0.90, 0.90, 0.90, 0.20, 0.25, 0.30, 0.35, 0.40,0.45])  # Overall probability of developing symptoms
-    sim['prognoses']['severe_probs']= np.array([0.90, 0.90, 0.90, 0.90, 0.00, 0.00, 0.00, 0.05, 0.00,0.00])  # Overall probability of developing severe symptoms
-    sim['prognoses']['crit_probs'] = np.array([0.135, 0.135, 0.135, 0.135, 0.000, 0.000, 0.000, 0.000, 0.000,0.000])  # Overall probability of developing critical symptoms
-    sim['prognoses']['death_probs']= np.array([0.04, 0.04, 0.04, 0.04, 0.00, 0.00, 0.00, 0.00, 0.00,0.00]) # Overall probability of dying
+    sim['prognoses']['age_cutoffs'] = np.array([0, 15,30,45,60,75])# Age cutoffs (lower limits)
+    sim['prognoses']['sus_ORs']=np.array([1 for i in range(len(sim['prognoses']['age_cutoffs']))])# Odds ratios for relative susceptibility
+    sim['prognoses']['symp_probs'] = np.array([0.90, 0.90, 0.90, 0.2,0.3,0.4])  # Overall probability of developing symptoms
+    sim['prognoses']['severe_probs']= np.array([0.9,0.9,0.9,0.2,0.3,0.4])  # Overall probability of developing severe symptoms
+    sim['prognoses']['crit_probs'] = np.array([0.135, 0.135, 0.135, 0.00,0.00,0.00])  # Overall probability of developing critical symptoms
+    sim['prognoses']['death_probs']= np.array([0.04, 0.04, 0.04, 0.00,0.00,0.00]) # Overall probability of dying
 
 
-    interventions = [tp_1, ct_1, ct_2, close_schools, close_works, social_distancing_community, social_distancing_home,protect_reinfection]
+    interventions = [tp_1, ct_1,
+    close_schools, close_works, social_distancing_community, social_distancing_home,
+    protect_reinfection,risk_target_vac,vac]
     sim.update_pars(interventions=interventions)
     sim.initialize()
     print('update sim successfully')
     return sim
 
 
-def print_picture(n_beds=2000, n_icus=20, ful_vac_rate=0.691956, soc_dis_rate=0.7, third_vac_rate='', factor=16,
-                  filename='plot',
-                  method=''):
+def print_picture(n_beds=2000, n_icus=20, target_vac_rate=0.691956, soc_dis_mode=0, vac_rate=0, factor=8,
+                  filename='plot'):
     def protect_elderly(sim):
         if sim.t == sim.day('2022-04-01'):
             elderly = sim.people.age > 70
@@ -186,11 +215,11 @@ def print_picture(n_beds=2000, n_icus=20, ful_vac_rate=0.691956, soc_dis_rate=0.
     cv.options(jupyter=True, verbose=0)
 
     ##running with multisims
-    s0 = make_sim(n_beds, n_icus, ful_vac_rate, third_vac_rate, soc_dis_rate, factor, method=method)
+    s0 = make_sim(n_beds, n_icus, target_vac_rate, vac_rate, soc_dis_mode, factor)
     s0.run()
     print('sim run successfully')
     print_list_pars.append(s0.pars)
-    file_name = filename + method + '.png'
+    file_name = filename + '.png'
     fig = s0.plot(start='2022-08-01', to_plot=to_plot, do_save=True, do_show=False, n_cols=2, figsize=(30, 20),
                   fig_path=file_name)
     # ,start = '2022-01-01',
@@ -211,6 +240,7 @@ def print_picture(n_beds=2000, n_icus=20, ful_vac_rate=0.691956, soc_dis_rate=0.
         df_list_age_new.append([row_num_age_new, agehist_new_df[agehist_new_df['date'] == date]])
         row_num_age_new += 12
     print('sim analyzer 2 successfully')
+    print('______________________________________________')
     row_num_age_new = 0
 
 # base case
@@ -221,18 +251,10 @@ print_list_pars = []
 for i in range(0, 25):
     if i in test_para:
         # ,6,7,8,9
-        if para_data[i][3] == 'n':
-            third_vac_rate = ''
-        else:
-            third_vac_rate = para_data[i][3]
-        if para_data[i][5] == 'n':
-            method = ''
-        else:
-            method = para_data[i][5]
         print(i, 'is successful in main')
-        print_picture(n_beds=para_data[i][0], n_icus=para_data[i][1], ful_vac_rate=para_data[i][2],
-                      third_vac_rate=third_vac_rate,
-                      soc_dis_rate=para_data[i][4], factor=test_acu, filename=str(i), method=method)
+        print_picture(n_beds=para_data[i][0], n_icus=para_data[i][1], target_vac_rate=float(para_data[i][2]),
+                      vac_rate=float(para_data[i][3]),
+                      soc_dis_mode=int(para_data[i][4]), factor=test_acu, filename=str(i))
 # age-distribution data
 # with pd.ExcelWriter('output_age.xlsx') as writer:
 #     for filename, row_num_age_cum, df in df_list_age_cum:
